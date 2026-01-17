@@ -3,38 +3,56 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-
 	"github.com/mayankpal100/leetgo/internal/browser"
 	"github.com/mayankpal100/leetgo/internal/scraper"
+	    "github.com/chromedp/chromedp"
+		"time"
+
 )
 
-func main() {
-	parent := context.Background()
 
-	ctx, cancel := browser.NewBrowserContext(parent)
+func main() {
+	ctx, cancel := browser.NewBrowserContext(context.Background())
 	defer cancel()
 
-	email := os.Getenv("LC_EMAIL")
-	pass := os.Getenv("LC_PASS")
+	// 🔁 First try loading cookies
+	if err := browser.LoadCookies(ctx); err != nil {
+		fmt.Println("No cookies found. Need manual login.")
 
-	if email == "" || pass == "" {
-		fmt.Println("Please set LC_EMAIL and LC_PASS")
-		return
+		// Manual login
+		if err := browser.Login(ctx); err != nil {
+			panic(err)
+		}
+
+		// Save session
+		if err := browser.SaveCookies(ctx); err != nil {
+			panic(err)
+		}
+
+		fmt.Println("🍪 Session saved!")
 	}
 
-	fmt.Println("Logging in...")
-	if err := browser.Login(ctx, email, pass); err != nil {
-		panic(err)
-	}
+	fmt.Println("🚀 Logged in using saved session")
 
-	fmt.Println("Logged in!")
+fmt.Println("🚀 Logged in using saved session")
 
-	code, err := scraper.ScrapeSolution(ctx, "https://leetcode.com/problem-of-the-day/")
-	if err != nil {
-		panic(err)
-	}
+problemURL := "https://leetcode.com/problems/two-sum/"
+fmt.Println("➡️ Navigating to problem:", problemURL)
 
-	fmt.Println("Fetched solution:")
-	fmt.Println(code)
+if err := chromedp.Run(ctx,
+	chromedp.Navigate(problemURL),
+	chromedp.Sleep(6*time.Second), // allow full React hydration
+); err != nil {
+	panic(err)
+}
+
+code, err := scraper.FetchGoSolution(ctx)
+if err != nil {
+	panic(err)
+}
+
+fmt.Println("===== GO SOLUTION =====")
+fmt.Println(code)
+
+
 }

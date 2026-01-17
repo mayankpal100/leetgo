@@ -1,19 +1,28 @@
 package browser
 
 import (
-    "context"
-    "github.com/chromedp/chromedp"
+	"context"
+	"fmt"
 	"time"
+
+	"github.com/chromedp/chromedp"
 )
 
-func Login(ctx context.Context, email, pass string) error {
-    tasks := chromedp.Tasks{
-        chromedp.Navigate("https://leetcode.com/accounts/login/"),
-        chromedp.WaitVisible(`input[name="login"]`),
-        chromedp.SendKeys(`input[name="login"]`, email),
-        chromedp.SendKeys(`input[name="password"]`, pass),
-        chromedp.Click(`button[type="submit"]`),
-        chromedp.Sleep(5 * time.Second),
-    }
-    return chromedp.Run(ctx, tasks)
+func Login(ctx context.Context) error {
+	fmt.Println("➡️ Please complete CAPTCHA + login manually.")
+	fmt.Println("➡️ You have 2 minutes...")
+
+	err := chromedp.Run(ctx,
+		chromedp.Navigate("https://leetcode.com/accounts/login/"),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// ⏸️ WAIT for manual login
+	time.Sleep(2 * time.Minute)
+
+	fmt.Println("✅ Assuming login is complete")
+	return nil
 }

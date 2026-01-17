@@ -7,12 +7,20 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-// NewBrowserContext creates a chromedp browser context with logging
 func NewBrowserContext(parent context.Context) (context.Context, context.CancelFunc) {
-	opts := []chromedp.ContextOption{
-		chromedp.WithLogf(log.Printf),
-	}
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", false), // 👈 IMPORTANT
+		chromedp.Flag("disable-gpu", false),
+	)
 
-	ctx, cancel := chromedp.NewContext(parent, opts...)
-	return ctx, cancel
+	allocCtx, allocCancel := chromedp.NewExecAllocator(parent, opts...)
+	ctx, cancel := chromedp.NewContext(
+		allocCtx,
+		chromedp.WithLogf(log.Printf),
+	)
+
+	return ctx, func() {
+		cancel()
+		allocCancel()
+	}
 }
